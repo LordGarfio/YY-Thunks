@@ -1,0 +1,59 @@
+name: Build YY-Thunks DLLs (Modern + XP)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-modern:
+    runs-on: windows-latest   # VM con Windows Server 2022 + VS2022
+    strategy:
+      matrix:
+        dll: [kernel33, user33, advapi33, shell33, gdi33, ole33, comdlg33, wininet33]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Compile YY-Thunks (Modern v143)
+        run: msbuild YY-Thunks.sln /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v143
+
+      - name: Link ${{ matrix.dll }}.dll (Modern)
+        run: |
+          link /DLL /DEF:defs\\${{ matrix.dll }}.def /OUT:bin\\Release\\${{ matrix.dll }}-modern.dll YYThunks.lib
+
+      - name: Upload ${{ matrix.dll }}.dll (Modern)
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.dll }}-modern
+          path: bin\\Release\\${{ matrix.dll }}-modern.dll
+
+  build-xp:
+    runs-on: windows-2019     # VM con Windows Server 2019 + VS2019 + v141_xp
+    strategy:
+      matrix:
+        dll: [kernel33, user33, advapi33, shell33, gdi33, ole33, comdlg33, wininet33]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Compile YY-Thunks (XP v141_xp)
+        run: msbuild YY-Thunks.sln /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v141_xp
+
+      - name: Link ${{ matrix.dll }}.dll (XP)
+        run: |
+          link /DLL /DEF:defs\\${{ matrix.dll }}.def /OUT:bin\\Release\\${{ matrix.dll }}-xp.dll YYThunks.lib
+
+      - name: Upload ${{ matrix.dll }}.dll (XP)
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.dll }}-xp
+          path: bin\\Release\\${{ matrix.dll }}-xp.dll
